@@ -1,0 +1,30 @@
+declare description "Modal Synth Engine";
+
+ba = library("basics.lib");
+en = library("envelopes.lib");
+os = library("oscillators.lib");
+
+
+/////////////////// Engine ///////////////////
+model_inner(freq, t, v) = par(i, v, os.oscs(ft(i))) :> _
+with {
+    ratio = 2^(t/12);
+    spread = (ratio - 1) / (v - 1);
+    ratios(i) = 1 + (i * spread);
+    ft(i) = freq * ratios(i);
+};
+
+model_wrapper(mFreq, mDec, mAmp, trig, a, n, t, v) = par(i, n, model_inner(freq(i), t, v) * en.are(a, dec(i), trig) * amp(i)) :> _,_
+with {
+    freq(i) = ba.take(i+1, mFreq);
+    dec(i) = ba.take(i+1, mDec);
+    level(i) = ba.take(i+1, mAmp);
+    amp(i) = 1 / sqrt(v) * level(i);
+};
+
+
+/////////////////// GUI ///////////////////
+mode_group(x) = hgroup("[A Modes]",x);
+t60_group(x) = hgroup("[B Decays]",x);
+gain_group(x) = hgroup("[C Gains]",x);
+global_group(x) = hgroup("[D Global]",x);
